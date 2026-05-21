@@ -1,4 +1,4 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const getSkillRecommendations = async (req, res) => {
   try {
@@ -16,21 +16,16 @@ const getSkillRecommendations = async (req, res) => {
        });
     }
 
-    const openai = new OpenAI({
-      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-      apiKey: process.env.GEMINI_API_KEY,
-    });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `As a career counselor, suggest 3 skills to learn next and a brief learning path based on these current skills: ${currentSkills.join(', ')}. Keep the response under 100 words and format as plain text.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gemini-1.5-flash",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 150,
-    });
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
 
     res.json({
-      recommendation: response.choices[0].message.content,
+      recommendation: responseText,
     });
   } catch (error) {
     res.status(500).json({ message: 'Error getting recommendations: ' + error.message });
